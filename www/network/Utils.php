@@ -15,7 +15,7 @@ class Utils {
     }
 
     public static function vk_request($method, $params) {
-        $params["access_token"] = Config::TOKEN;
+        $params["access_token"] = Config::getToken();
         $params["v"] = Config::API;
 
         $res = self::curl_get("https://api.vk.com/method/$method", $params);

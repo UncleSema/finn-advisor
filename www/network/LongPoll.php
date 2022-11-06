@@ -9,7 +9,7 @@ class LongPoll {
     }
 
     public function getLongPolling() {
-        $data = Utils::vk_request("groups.getLongPollServer", ["group_id"=>Config::GROUP_ID]);
+        $data = Utils::vk_request("groups.getLongPollServer", ["group_id"=>Config::getGroupId()]);
         if($data == false)
             exit("Failed to get longpolling data...\n");
         $this->server = $data["server"];

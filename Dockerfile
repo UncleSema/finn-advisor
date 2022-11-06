@@ -1,3 +1,8 @@
 FROM php:7.4.33-cli
+ADD . app/
+ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
 
-ENTRYPOINT [ "php", "-S", "127.0.0.1:8080", "www/index.php" ]
+RUN chmod +x /usr/local/bin/install-php-extensions && \
+    install-php-extensions curl mbstring
+
+ENTRYPOINT [ "php", "/app/www/index.php" ]

@@ -1,7 +1,7 @@
 <?php
 function vkAPI($method, $params = []) {
     $params["v"] = Config::API;
-    $params["access_token"] = Config::TOKEN;
+    $params["access_token"] = Config::getToken();
 
     $url = "https://api.vk.com/method/" . $method . "?";
     $myCurl = curl_init();

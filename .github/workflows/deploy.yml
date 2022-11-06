@@ -1,0 +1,42 @@
+name: Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  push_to_registry:
+    name: Push Docker image to Docker Hub
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKERHUB_IMAGE }}:latest
+
+  deployment:
+    name: Deploy on prod
+    runs-on: ubuntu-latest
+    needs: push_to_registry
+    environment: prod
+    steps:
+      - name: Deploy
+        uses: wshihadeh/docker-deployment-action@v1
+        with:
+          remote_docker_host: ${{ secrets.HOST_ADDRESS }}
+          ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
+          args: "-e VK_BOT_TOKEN=${{ secrets.VK_BOT_TOKEN }} -e VK_GROUP_ID=${{ secrets.VK_GROUP_ID }}"
+
