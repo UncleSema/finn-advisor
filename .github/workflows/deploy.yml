@@ -32,11 +32,21 @@ jobs:
     needs: push_to_registry
     environment: prod
     steps:
-      - name: Deploy
-        uses: wshihadeh/docker-deployment-action@v1
+      - name: Deploy via SSH action
+        uses: appleboy/ssh-action@master
         with:
-          remote_docker_host: ${{ secrets.HOST_ADDRESS }}
-          ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
-          ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
-          args: "-e VK_BOT_TOKEN=${{ secrets.VK_BOT_TOKEN }} -e VK_GROUP_ID=${{ secrets.VK_GROUP_ID }}"
+          host: ${{ secrets.HOST_ADDRESS }}
+          username: ${{ secrets.HOST_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Stop all running Docker Containers
+            docker kill $(docker ps -q)
 
+            # Free up space
+            docker system prune -a
+
+            # Pull the Docker Image 
+            docker pull ${{ secrets.DOCKERHUB_IMAGE }}:latest
+
+            # Run a new container from a new image
+            docker run -d ${{ secrets.DOCKERHUB_IMAGE }}:latest
