@@ -40,13 +40,14 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             # Stop all running Docker Containers
-            docker kill $(docker ps -q)
-
-            # Free up space
-            docker system prune -a
+            docker kill $(docker ps -qf "label=finn-advisor")
 
             # Pull the Docker Image 
             docker pull ${{ secrets.DOCKERHUB_IMAGE }}:latest
+            
+            # Free up space
+            docker image prune
+            docker container prune
 
             # Run a new container from a new image
-            docker run -d -e VK_BOT_TOKEN=${{ secrets.VK_BOT_TOKEN }} -e VK_GROUP_ID=${{ secrets.VK_GROUP_ID }} ${{ secrets.DOCKERHUB_IMAGE }}:latest
+            docker run -d -e VK_BOT_TOKEN=${{ secrets.VK_BOT_TOKEN }} -e VK_GROUP_ID=${{ secrets.VK_GROUP_ID }} --network=app -l finn-advisor ${{ secrets.DOCKERHUB_IMAGE }}:latest
