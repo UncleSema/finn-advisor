@@ -49,4 +49,4 @@ jobs:
             docker pull ${{ secrets.DOCKERHUB_IMAGE }}:latest
 
             # Run a new container from a new image
-            docker run -d ${{ secrets.DOCKERHUB_IMAGE }}:latest
+            docker run -d -e VK_BOT_TOKEN=${{ secrets.VK_BOT_TOKEN }} -e VK_GROUP_ID=${{ secrets.VK_GROUP_ID }} ${{ secrets.DOCKERHUB_IMAGE }}:latest
