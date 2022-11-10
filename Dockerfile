@@ -1,5 +1,5 @@
-FROM php:7.4.33-cli
+FROM composer:2.4.4
 ADD . app/
-
+WORKDIR app
 RUN composer install
-ENTRYPOINT [ "php", "/app/www/index.php" ]
+ENTRYPOINT [ "php", "www/index.php" ]
