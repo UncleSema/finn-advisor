@@ -1,16 +1,18 @@
 <?php
 
 class LongPoll {
-    private $server, $key;
-    private $ts;
+    private string $server, $key;
+    private string $ts;
+    private Curler $curler;
 
-    public function __construct() {
+    public function __construct(Curler $curler) {
+        $this->curler = $curler;
         $this->getLongPolling();
     }
 
-    public function getLongPolling() {
-        $data = Utils::vk_request("groups.getLongPollServer", ["group_id"=>Config::getGroupId()]);
-        if($data == false)
+    public function getLongPolling(): void {
+        $data = $this->curler->vk_request("groups.getLongPollServer", ["group_id" => Config::getGroupId()]);
+        if (!$data)
             exit("Failed to get longpolling data...\n");
         $this->server = $data["server"];
         $this->key = $data["key"];
@@ -19,12 +21,12 @@ class LongPoll {
 
     public function update() {
         $params = [
-            "act"=>"a_check", "key"=>$this->key,
-            "ts"=>$this->ts, "mode"=>2,
-            "version"=>2, "wait"=>30
+            "key" => $this->key,
+            "ts" => $this->ts,
+            "wait" => 25
         ];
-        $updates = Utils::curl_get($this->server, $params);
-        if(isset($updates["failed"])){
+        $updates = $this->curler->curl_get($this->server, $params);
+        if (isset($updates["failed"])) {
             $this->getLongPolling();
             return $this->update();
         }

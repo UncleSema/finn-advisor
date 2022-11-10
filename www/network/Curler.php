@@ -1,7 +1,8 @@
 <?php
 
-class Utils {
-    public static function curl_get($url, $params) {
+class Curler {
+
+    public function curl_get($url, $params) {
 
         $url = $url . "?" . http_build_query($params);
 
@@ -14,7 +15,7 @@ class Utils {
         return json_decode($response, true);
     }
 
-    public static function vk_request($method, $params) {
+    public function vk_request($method, $params) {
         $params["access_token"] = Config::getToken();
         $params["v"] = Config::API;
 

@@ -1,11 +1,12 @@
 <?php
 
 require 'Config.php';
-require 'network/Utils.php';
+require 'network/Curler.php';
 require 'network/LongPoll.php';
 require 'utils/Functions.php';
 
-$lp = new LongPoll();
+$curler = new Curler();
+$lp = new LongPoll($curler);
 
 while (true) {
     foreach($lp->update() as $update) {

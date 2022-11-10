@@ -1,0 +1,20 @@
+{
+  "name": "unclesema/finn-advisor",
+  "description": "Finn - financial advisor",
+  "license": "Apache-2.0",
+  "authors": [
+    {
+      "name": "Semen Korobko",
+      "email": "semenkorobko2@gmail.com"
+    }
+  ],
+  "require": {
+    "phpunit/phpunit": "9.5.26",
+    "curl/curl": "2.4.0",
+    "ext-curl": "*",
+    "ext-mbstring": "*"
+  },
+  "scripts": {
+    "test": "phpunit tests"
+  }
+}
