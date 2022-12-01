@@ -26,13 +26,6 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_IMAGE }}:latest
 
-      - name: Build and push Liquibase docker image
-        uses: docker/build-push-action@v3
-        with:
-          context: db-migrations
-          push: true
-          tags: ${{ secrets.DOCKERHUB_IMAGE_LIQUIBASE }}:latest
-
   migrations_n_deployment:
     name: Deploy on prod
     runs-on: ubuntu-latest
