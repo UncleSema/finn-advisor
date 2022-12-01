@@ -1,0 +1,7 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: UncleSema
+      changes:
+        - sqlFile:
+            path: migrations/001-core-tables.sql

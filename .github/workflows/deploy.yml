@@ -19,14 +19,21 @@ jobs:
           username: ${{ secrets.DOCKERHUB_NAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Build and push Service docker image
         uses: docker/build-push-action@v3
         with:
           context: .
           push: true
           tags: ${{ secrets.DOCKERHUB_IMAGE }}:latest
 
-  deployment:
+      - name: Build and push Liquibase docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: db-migrations
+          push: true
+          tags: ${{ secrets.DOCKERHUB_IMAGE_LIQUIBASE }}:latest
+
+  migrations_n_deployment:
     name: Deploy on prod
     runs-on: ubuntu-latest
     needs: push_to_registry
@@ -44,10 +51,28 @@ jobs:
 
             # Pull the Docker Image 
             docker pull ${{ secrets.DOCKERHUB_IMAGE }}:latest
+            docker pull ${{ secrets.DOCKERHUB_IMAGE_LIQUIBASE }}:latest
             
             # Free up space
             docker image prune
             docker container prune
 
-            # Run a new container from a new image
-            docker run -d -e VK_BOT_TOKEN=${{ secrets.VK_BOT_TOKEN }} -e VK_GROUP_ID=${{ secrets.VK_GROUP_ID }} --network=app -l finn-advisor ${{ secrets.DOCKERHUB_IMAGE }}:latest
+            # Run migrations
+#            docker run -d \
+#                        -e DATABASE_URL=${{ secrets.DATABASE_URL }} \
+#                        -e DATABASE_USER=${{ secrets.DATABASE_USER }} \
+#                        -e DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }} \
+#                        -e DATABASE_SCHEMA=${{ secrets.DATABASE_SCHEMA }} \
+#                        --network=app -l migrations ${{ secrets.DOCKERHUB_IMAGE_LIQUIBASE }}:latest
+
+            docker run -d \ 
+                    -e VK_BOT_TOKEN=${{ secrets.VK_BOT_TOKEN }} \
+                    -e VK_GROUP_ID=${{ secrets.VK_GROUP_ID }} \
+                    -e DB_HOST=${{ secrets.DB_HOST }} \
+                    -e DB_NAME=${{ secrets.DB_NAME }} \
+                    -e DB_USER=${{ secrets.DB_USER }} \
+                    -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+                    -e REDIS_HOST=${{ secrets.REDIS_HOST }} \
+                    -e REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }} \
+                    -e REDIS_DATABASE=${{ secrets.REDIS_DATABASE }} \
+                    --network=app -l finn-advisor ${{ secrets.DOCKERHUB_IMAGE }}:latest
