@@ -57,14 +57,6 @@ jobs:
             docker image prune
             docker container prune
 
-            # Run migrations
-#            docker run -d \
-#                        -e DATABASE_URL=${{ secrets.DATABASE_URL }} \
-#                        -e DATABASE_USER=${{ secrets.DATABASE_USER }} \
-#                        -e DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }} \
-#                        -e DATABASE_SCHEMA=${{ secrets.DATABASE_SCHEMA }} \
-#                        --network=app -l migrations ${{ secrets.DOCKERHUB_IMAGE_LIQUIBASE }}:latest
-
             docker run -d \ 
                     -e VK_BOT_TOKEN=${{ secrets.VK_BOT_TOKEN }} \
                     -e VK_GROUP_ID=${{ secrets.VK_GROUP_ID }} \
