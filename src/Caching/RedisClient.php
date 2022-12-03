@@ -3,7 +3,6 @@
 namespace FinnAdvisor\Caching;
 
 use Exception;
-use FinnAdvisor\Config;
 use FinnAdvisor\Model\User;
 use Logger;
 use Predis\Client;
@@ -13,13 +12,11 @@ class RedisClient
     private Client $redis;
     private Logger $logger;
 
-    public function __construct(Config $config)
+    public function __construct(Client $redis)
     {
         $this->logger = Logger::getLogger(__CLASS__);
+        $this->redis = $redis;
 
-        $host = $config->getRedisHost();
-
-        $this->redis = new Client("$host");
         try {
             $this->redis->connect();
         } catch (Exception $e) {
@@ -73,13 +70,13 @@ class RedisClient
 
     public function disconnect(): void
     {
-        if ($this->redis->isConnected()) {
-            $this->logger->debug("Disconnecting from redis...");
-            try {
+        try {
+            if ($this->redis->isConnected()) {
+                $this->logger->debug("Disconnecting from redis...");
                 $this->redis->disconnect();
-            } catch (Exception $e) {
-                $this->logger->error("Unable to disconnect from redis", $e);
             }
+        } catch (Exception $e) {
+            $this->logger->error("Unable to disconnect from redis", $e);
         }
     }
 }

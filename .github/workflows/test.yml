@@ -1,0 +1,16 @@
+name: Testing
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: composer install
+        uses: docker://composer:1.9.1
+        with:
+          args: install
+      - name: PHPUnit testing
+        uses: docker://php:5.5
+        with:
+          args: test

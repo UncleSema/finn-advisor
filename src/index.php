@@ -7,6 +7,7 @@ use FinnAdvisor\Service\UserNewMessageService;
 use FinnAdvisor\Service\UserResponseService;
 use FinnAdvisor\VK\VKBotApiClient;
 use FinnAdvisor\VK\VKBotCallbackApiHandler;
+use Predis\Client;
 use VK\CallbackApi\LongPoll\VKCallbackApiLongPollExecutor;
 use VK\Client\VKApiClient;
 
@@ -30,7 +31,9 @@ try {
     die($e->getMessage());
 }
 
-$redisClient = new RedisClient($config);
+$redisHost = $config->getRedisHost();
+$redis = new Client("$redisHost");
+$redisClient = new RedisClient($redis);
 
 $client = new VKBotApiClient($vk, $redisClient, $config);
 $categoriesRepository = new CategoriesRepository($pdo);
