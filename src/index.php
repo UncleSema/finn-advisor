@@ -3,7 +3,7 @@
 use FinnAdvisor\Caching\RedisClient;
 use FinnAdvisor\Categories\CategoriesRepository;
 use FinnAdvisor\Config;
-use FinnAdvisor\Service\UserNewMessageRouter;
+use FinnAdvisor\Service\UserNewMessageService;
 use FinnAdvisor\Service\UserResponseService;
 use FinnAdvisor\VK\VKBotApiClient;
 use FinnAdvisor\VK\VKBotCallbackApiHandler;
@@ -35,7 +35,7 @@ $redisClient = new RedisClient($config);
 $client = new VKBotApiClient($vk, $redisClient, $config);
 $categoriesRepository = new CategoriesRepository($pdo);
 $responseService = new UserResponseService($categoriesRepository);
-$messageRouter = new UserNewMessageRouter($responseService, $client);
+$messageRouter = new UserNewMessageService($responseService, $client);
 $handler = new VKBotCallbackApiHandler($messageRouter, $redisClient);
 $executor = new VKCallbackApiLongPollExecutor($vk, $config->getToken(), $config->getGroupId(), $handler, 25);
 

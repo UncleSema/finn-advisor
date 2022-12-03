@@ -5,17 +5,17 @@ namespace FinnAdvisor\VK;
 use Exception;
 use FinnAdvisor\Caching\RedisClient;
 use FinnAdvisor\Model\NewMessage;
-use FinnAdvisor\Service\UserNewMessageRouter;
+use FinnAdvisor\Service\UserNewMessageService;
 use Logger;
 use VK\CallbackApi\VKCallbackApiHandler;
 
 class VKBotCallbackApiHandler extends VKCallbackApiHandler
 {
-    private UserNewMessageRouter $messageRouter;
+    private UserNewMessageService $messageRouter;
     private RedisClient $redisClient;
     private Logger $logger;
 
-    public function __construct(UserNewMessageRouter $messageRouter, RedisClient $redisClient)
+    public function __construct(UserNewMessageService $messageRouter, RedisClient $redisClient)
     {
         $this->messageRouter = $messageRouter;
         $this->redisClient = $redisClient;
