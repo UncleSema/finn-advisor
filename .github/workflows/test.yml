@@ -7,10 +7,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: composer install
-        uses: docker://composer:1.9.1
+        uses: docker://composer:2.4.4
         with:
           args: install
       - name: PHPUnit testing
-        uses: docker://php:5.5
+        uses: docker://composer:2.4.4
         with:
           args: test
