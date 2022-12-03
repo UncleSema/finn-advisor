@@ -1,7 +1,10 @@
 <?php
 
 use FinnAdvisor\Caching\RedisClient;
+use FinnAdvisor\Categories\CategoriesRepository;
 use FinnAdvisor\Config;
+use FinnAdvisor\Service\UserNewMessageRouter;
+use FinnAdvisor\Service\UserResponseService;
 use FinnAdvisor\VK\VKBotApiClient;
 use FinnAdvisor\VK\VKBotCallbackApiHandler;
 use VK\CallbackApi\LongPoll\VKCallbackApiLongPollExecutor;
@@ -14,10 +17,26 @@ Logger::configure("../resources/logback.xml");
 
 $vk = new VKApiClient();
 $config = new Config();
+$host = $config->getDatabaseHost();
+$dbname = $config->getDatabaseName();
+$user = $config->getDatabaseUser();
+$password = $config->getDatabasePassword();
+
+try {
+    $pdo = new PDO("pgsql:host=$host;port=5432;dbname=$dbname", $user, $password, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+    ]);
+} catch (PDOException $e) {
+    die($e->getMessage());
+}
+
 $redisClient = new RedisClient($config);
 
 $client = new VKBotApiClient($vk, $redisClient, $config);
-$handler = new VKBotCallbackApiHandler($client);
+$categoriesRepository = new CategoriesRepository($pdo);
+$responseService = new UserResponseService($categoriesRepository);
+$messageRouter = new UserNewMessageRouter($responseService, $client);
+$handler = new VKBotCallbackApiHandler($messageRouter, $redisClient);
 $executor = new VKCallbackApiLongPollExecutor($vk, $config->getToken(), $config->getGroupId(), $handler, 25);
 
 try {

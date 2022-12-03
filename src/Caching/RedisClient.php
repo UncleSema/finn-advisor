@@ -18,15 +18,29 @@ class RedisClient
         $this->logger = Logger::getLogger(__CLASS__);
 
         $host = $config->getRedisHost();
-        $password = $config->getRedisPassword();
-        $database = $config->getRedisDatabase();
 
-        $this->redis = new Client("$host?password=$password&database=$database");
+        $this->redis = new Client("$host");
         try {
             $this->redis->connect();
         } catch (Exception $e) {
             $this->logger->error("Unable to connect to redis", $e);
         }
+    }
+
+    public function getsetMessageId(string $id): string|null
+    {
+        try {
+            if ($this->redis->isConnected()) {
+                $response = $this->redis->getset($id, "1");
+                if ($response != null) {
+                    $this->redis->expire($id, 5 * 60);
+                }
+                return $response;
+            }
+        } catch (Exception $e) {
+            $this->logger->error("Exception during writing user into cache", $e);
+        }
+        return null;
     }
 
     public function writeUser(User $user): void

@@ -2,25 +2,49 @@
 
 namespace FinnAdvisor\VK;
 
+use Exception;
+use FinnAdvisor\Caching\RedisClient;
+use FinnAdvisor\Model\NewMessage;
+use FinnAdvisor\Service\UserNewMessageRouter;
 use Logger;
 use VK\CallbackApi\VKCallbackApiHandler;
 
 class VKBotCallbackApiHandler extends VKCallbackApiHandler
 {
-    private VKBotApiClient $client;
+    private UserNewMessageRouter $messageRouter;
+    private RedisClient $redisClient;
     private Logger $logger;
 
-    public function __construct(VKBotApiClient $client)
+    public function __construct(UserNewMessageRouter $messageRouter, RedisClient $redisClient)
     {
-        $this->client = $client;
+        $this->messageRouter = $messageRouter;
+        $this->redisClient = $redisClient;
         $this->logger = Logger::getLogger(__CLASS__);
     }
 
-    public function messageNew($group_id, $secret, $object)
+    public function messageNew(int $group_id, string|null $secret, array $object)
     {
-        $peerId = $object['message']['peer_id'];
-        $this->logger->info("New message from $peerId");
-        $user = $this->client->getUser($peerId);
-        $this->client->sendMessage("Привет, " . $user->getFirstName() . "!", $peerId);
+        $message = new NewMessage(
+            $object["message"]["id"],
+            $object["message"]["date"],
+            $object["message"]["peer_id"],
+            $object["message"]["text"]
+        );
+        if ($this->isMessageAlreadyProcessed($message)) {
+            return;
+        }
+        $peer_id = $message->getPeerId();
+        $this->logger->debug("got new message, peer_id: $peer_id");
+        try {
+            $this->messageRouter->processMessage($message);
+        } catch (Exception $e) {
+            $this->logger->error("Cannot process new message", $e);
+        }
+    }
+
+    private function isMessageAlreadyProcessed(NewMessage $message): bool
+    {
+        $id = $message->getPeerId() . "#" . $message->getId();
+        return $this->redisClient->getsetMessageId($id) != null;
     }
 }

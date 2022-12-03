@@ -10,8 +10,10 @@ create table operations
 
 -- users
 
-create table users
+create table categories
 (
-    id              character varying(255) not null primary key
+    user_id           character varying(255) not null,
+    category          character varying(255) not null,
+    primary key (user_id, category)
 );
 
