@@ -2,15 +2,18 @@
 
 namespace FinnAdvisor\Service;
 
-use FinnAdvisor\Categories\CategoriesRepository;
+use FinnAdvisor\Service\Categories\CategoriesRepository;
+use FinnAdvisor\Service\Operation\OperationRepository;
 
 class UserResponseService
 {
     private CategoriesRepository $categoriesRepository;
+    private OperationRepository $operationRepository;
 
-    public function __construct(CategoriesRepository $categoriesRepository)
+    public function __construct(CategoriesRepository $categoriesRepository, OperationRepository $operationRepository)
     {
         $this->categoriesRepository = $categoriesRepository;
+        $this->operationRepository = $operationRepository;
     }
 
     public function allCategories(string $userId): string
@@ -58,9 +61,32 @@ class UserResponseService
 EOD;
     }
 
-    public function remove(): string
+    public function addOperation(string $userId, int $sum, string $category, ?string $description): string
     {
-        return "Убираю последнюю операцию...";
+        $added = $this->operationRepository->insertOperation($userId, $sum, $category, $description);
+        if ($added == 0) {
+            return "Не удалось добавить новую операцию... У вас точно есть категория $category?";
+        }
+        if ($description == null) {
+            return "Операция на сумму $sum в категории $category успешно добавлена!";
+        }
+        return "Операция на сумму $sum в категории $category c описанием $description успешно добавлена!";
+    }
+
+    public function removeOperation(string $userId): string
+    {
+        $operation = $this->operationRepository->deleteLastOperation($userId);
+        if ($operation == null) {
+            return "Не удалось удалить последнюю операцию... Вы точно добавили хотя бы одну операцию?";
+        }
+        $sum = $operation->getSum();
+        $category = $operation->getCategory();
+        $description = $operation->getDescription();
+
+        if ($description == null) {
+            return "Операция на сумму $sum в категории $category успешно удалена!";
+        }
+        return "Операция на сумму $sum в категории $category c описанием $description успешно удалена!";
     }
 
     public function statement(): string

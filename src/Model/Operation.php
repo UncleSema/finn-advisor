@@ -4,16 +4,18 @@ namespace FinnAdvisor\Model;
 
 final class Operation
 {
-    private string $id;
+    private int $id;
     private string $userId;
-    private double $sum;
-    private string $description;
+    private int $sum;
+    private string $category;
+    private ?string $description;
 
-    public function __construct($id, $userId, $sum, $description)
+    public function __construct(int $id, string $userId, int $sum, string $category, ?string $description)
     {
         $this->id = $id;
         $this->sum = $sum;
         $this->userId = $userId;
+        $this->category = $category;
         $this->description = $description;
     }
 
@@ -32,7 +34,12 @@ final class Operation
         return $this->sum;
     }
 
-    public function getDescription(): string
+    public function getCategory(): string
+    {
+        return $this->category;
+    }
+
+    public function getDescription(): ?string
     {
         return $this->description;
     }

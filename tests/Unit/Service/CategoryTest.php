@@ -2,7 +2,8 @@
 
 namespace FinnAdvisor\Tests\Unit\Service;
 
-use FinnAdvisor\Categories\CategoriesRepository;
+use FinnAdvisor\Service\Categories\CategoriesRepository;
+use FinnAdvisor\Service\Operation\OperationRepository;
 use FinnAdvisor\Service\UserResponseService;
 use PHPUnit\Framework\TestCase;
 
@@ -77,9 +78,11 @@ EOD,
 
     private function stubWithMethod(string $method, mixed $value): UserResponseService
     {
-        $stub = $this->createStub(CategoriesRepository::class);
-        $stub->method($method)
+        $categoriesStub = $this->createStub(CategoriesRepository::class);
+        $operationsStub = $this->createStub(OperationRepository::class);
+        $categoriesStub->method($method)
             ->willReturn($value);
-        return new UserResponseService($stub);
+
+        return new UserResponseService($categoriesStub, $operationsStub);
     }
 }

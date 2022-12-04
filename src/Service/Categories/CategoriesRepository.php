@@ -1,20 +1,17 @@
 <?php
 
-namespace FinnAdvisor\Categories;
+namespace FinnAdvisor\Service\Categories;
 
-use Logger;
 use PDO;
 use PDOException;
 
 class CategoriesRepository
 {
     private PDO $pdo;
-    private Logger $logger;
 
     public function __construct(PDO $pdo)
     {
         $this->pdo = $pdo;
-        $this->logger = Logger::getLogger(__CLASS__);
     }
 
     public function getAllCategoriesForUser(string $userId): array
@@ -22,7 +19,7 @@ class CategoriesRepository
         $rows = $this->pdo
             ->query("SELECT category FROM categories WHERE user_id = '$userId'")
             ->fetchAll();
-        $categories = array();
+        $categories = [];
         foreach ($rows as $row) {
             $categories[] = $row["category"];
         }
@@ -50,10 +47,4 @@ class CategoriesRepository
             ->query("DELETE FROM categories WHERE user_id='$userId' AND category='$category'")
             ->rowCount();
     }
-
-//    public function existsCategory(string $userId, string $category): bool
-//    {
-//        return $this->pdo
-//            ->query("SELECT category FROM categories WHERE user_id='$userId' and category=")
-//    }
 }
