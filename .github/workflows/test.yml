@@ -6,11 +6,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: composer install
-        uses: docker://composer:2.4.4
+      - name: Setup PHP with PECL extension
+        uses: shivammathur/setup-php@v2
         with:
-          args: install
-      - name: PHPUnit testing
-        uses: docker://composer:2.4.4
-        with:
-          args: test
+          php-version: '8.2'
+          extensions: gd
+      - name: Composer Install and Test
+        run: |
+          composer install
+          composer test

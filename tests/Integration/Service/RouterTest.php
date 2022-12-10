@@ -6,6 +6,7 @@ use FinnAdvisor\Model\NewMessage;
 use FinnAdvisor\Service\Categories\CategoriesRepository;
 use FinnAdvisor\Service\NewMessageRouter;
 use FinnAdvisor\Service\Operation\OperationRepository;
+use FinnAdvisor\Service\StatementService;
 use FinnAdvisor\Service\UserResponseService;
 use FinnAdvisor\VK\VKBotApiClient;
 use PDOException;
@@ -18,15 +19,15 @@ class RouterTest extends TestCase
     {
         $operationRepository = $this->createStub(OperationRepository::class);
         $categoryRepository = $this->createStub(CategoriesRepository::class);
+        $statementService = $this->createStub(StatementService::class);
         $categoryRepository->method("getAllCategoriesForUser")
             ->willThrowException(new PDOException("test exception"));
 
         $apiClient = $this->createMock(VKBotApiClient::class);
         $apiClient->expects(self::once())
-            ->method("sendMessage")
-            ->with("Ой... Кажется, произошла какая-то ошибка... Уже разбираюсь!", 3);
+            ->method("sendMessage");
 
-        $responseService = new UserResponseService($categoryRepository, $operationRepository);
+        $responseService = new UserResponseService($categoryRepository, $operationRepository, $statementService);
         $router = new NewMessageRouter($responseService, $apiClient);
 
         $router->processMessage(new NewMessage(1, 2, 3, "категории"));

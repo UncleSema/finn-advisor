@@ -2,6 +2,12 @@
 
 namespace FinnAdvisor\Service;
 
+use DateTime;
+use FinnAdvisor\Model\MessageResponse;
+use FinnAdvisor\Model\Operation;
+use FinnAdvisor\Model\VK\Button;
+use FinnAdvisor\Model\VK\Keyboard;
+use FinnAdvisor\Model\VK\Template;
 use FinnAdvisor\Service\Categories\CategoriesRepository;
 use FinnAdvisor\Service\Operation\OperationRepository;
 
@@ -9,98 +15,206 @@ class UserResponseService
 {
     private CategoriesRepository $categoriesRepository;
     private OperationRepository $operationRepository;
+    private StatementService $statementService;
 
-    public function __construct(CategoriesRepository $categoriesRepository, OperationRepository $operationRepository)
-    {
+    public function __construct(
+        CategoriesRepository $categoriesRepository,
+        OperationRepository  $operationRepository,
+        StatementService     $statementService
+    ) {
         $this->categoriesRepository = $categoriesRepository;
         $this->operationRepository = $operationRepository;
+        $this->statementService = $statementService;
     }
 
-    public function allCategories(string $userId): string
+    public function allCategories(string $userId): MessageResponse
     {
         $categories = $this->categoriesRepository->getAllCategoriesForUser($userId);
         if (empty($categories)) {
-            return "У вас пока нет ни одной категории.";
+            $text = "У вас пока нет ни одной категории.";
+        } else {
+            $joined = implode("\n - ", $categories);
+            $text = "У вас есть следующие категории:\n - $joined";
         }
-        $joined = implode("\n - ", $categories);
-        return "У вас есть следующие категории:\n - $joined";
+        return $this->generateResponse($userId, $text);
     }
 
-    public function addCategory(string $userId, string $category): string
+    public function addCategory(string $userId, string $category): MessageResponse
     {
         $added = $this->categoriesRepository->insertCategory($userId, $category);
         if ($added == 0) {
-            return "Хм, кажется, категория $category уже существует...";
+            $text = "Хм, кажется, категория $category уже существует...";
+        } else {
+            $text = "Новая категория $category успешно добавлена!";
         }
-        return "Новая категория $category успешно добавлена!";
+        return $this->generateResponse($userId, $text);
     }
 
-    public function removeCategory(string $userId, string $category): string
+    public function removeCategory(string $userId, string $category): MessageResponse
     {
         $deleted = $this->categoriesRepository->deleteCategory($userId, $category);
         if ($deleted == 0) {
-            return "Хм, кажется, категории $category не существует...";
+            $text = "Хм, кажется, категории $category не существует...";
+        } else {
+            $text = "Категория $category успешно удалена!";
         }
-        return "Категория $category успешно удалена!";
+        return $this->generateResponse($userId, $text);
     }
 
-    public function help(): string
+    public function help(string $userId): MessageResponse
     {
-        return <<<EOD
-Ты можешь мне написать следующее:
-1) + сумма категория [описание] — добавить новую операцию 
+        $text = <<<EOD
+Вот все команды, которые я знаю:
+1) + сумма категория [дата] — добавить новую операцию (дата в формате дд-мм-гггг)
 2) + категория — добавить новую категорию
 3) - категория — удалить категорию
-4) категории — всё добавленные тобой категории
-5) отчёт — полный отчёт о твоих операциях в pdf формате
-6) отчёт категория — полный отчёт об операциях по заданной категории в pdf формате
-7) помощь — я напишу это сообщение
-8) напомни день +- сумма категория [описание] — я напомню в заданный день об операции
-9) убери — я уберу последнюю операцию
-10) убери [категория] — я уберу последнюю операцию заданной категории
+4) категории — всё добавленные категории
+5) отчёт — полный отчёт об операциях
+6) помощь — это сообщение
+7) убери — убрать последнюю операцию
+8) убери категория — убрать последнюю операцию заданной категории
+9) операции — все операции
+10) операции категория — все операции заданной категории
 EOD;
+        return $this->generateResponse($userId, $text);
     }
 
-    public function addOperation(string $userId, int $sum, string $category, ?string $description): string
+    public function addOperation(string $userId, string $sumRaw, string $category, ?string $date): MessageResponse
     {
-        $added = $this->operationRepository->insertOperation($userId, $sum, $category, $description);
+        if ($date != null) {
+            $date = $this->validateDate($date);
+            if ($date == null) {
+                return $this->generateResponse($userId, "Ошибка: дата должна быть в формате дд-мм-гггг");
+            }
+        }
+        if (strlen($sumRaw) > 8) {
+            return $this->generateResponse($userId, "Ошибка: слишком большая сумма $sumRaw");
+        }
+        $sum = (int) $sumRaw;
+        $added = $this->operationRepository->insertOperation($userId, $sum, $category, $date);
         if ($added == 0) {
-            return "Не удалось добавить новую операцию... У вас точно есть категория $category?";
+            $text = "Не удалось добавить новую операцию... У вас точно есть категория $category?";
+        } else {
+            $text = "Операция на сумму $sum в категории $category успешно добавлена!";
         }
-        if ($description == null) {
-            return "Операция на сумму $sum в категории $category успешно добавлена!";
-        }
-        return "Операция на сумму $sum в категории $category c описанием $description успешно добавлена!";
+        return $this->generateResponse($userId, $text);
     }
 
-    public function removeOperation(string $userId): string
+    public function removeOperation(string $userId): MessageResponse
     {
         $operation = $this->operationRepository->deleteLastOperation($userId);
         if ($operation == null) {
-            return "Не удалось удалить последнюю операцию... Вы точно добавили хотя бы одну операцию?";
+            $text = "Не удалось удалить последнюю операцию... Вы точно добавили хотя бы одну операцию?";
+        } else {
+            $sum = $operation->getSum();
+            $category = $operation->getCategory();
+            $text = "Операция на сумму $sum в категории $category успешно удалена!";
         }
-        $sum = $operation->getSum();
-        $category = $operation->getCategory();
-        $description = $operation->getDescription();
+        return $this->generateResponse($userId, $text);
+    }
 
-        if ($description == null) {
-            return "Операция на сумму $sum в категории $category успешно удалена!";
+    public function removeOperationByCategory(string $userId, string $category): MessageResponse
+    {
+        $operation = $this->operationRepository->deleteLastOperationInCategory($userId, $category);
+        if ($operation == null) {
+            $text = "Не удалось удалить последнюю операцию... " .
+                "Вы точно добавили хотя бы одну операцию для категории $category?";
+        } else {
+            $sum = $operation->getSum();
+            $category = $operation->getCategory();
+            $text = "Операция на сумму $sum в категории $category успешно удалена!";
         }
-        return "Операция на сумму $sum в категории $category c описанием $description успешно удалена!";
+        return $this->generateResponse($userId, $text);
     }
 
-    public function statement(): string
+    public function statement(string $userId): MessageResponse
     {
-        return "Формирую отчёт...";
+        $operations = $this->operationRepository->getAllOperations($userId);
+        if (empty($operations)) {
+            $statement = null;
+            $text = "Вы не добавили ни одной операции :(";
+        } else {
+            $statement = $this->statementService->createStatement($userId, $operations);
+            $text = "Формирую отчёт...";
+        }
+        return $this->generateResponse($userId, $text, $statement);
     }
 
-    public function serverError(): string
+    public function allOperations(string $userId): MessageResponse
     {
-        return "Ой... Кажется, произошла какая-то ошибка... Уже разбираюсь!";
+        $operations = $this->operationRepository->getAllOperations($userId);
+        if (empty($operations)) {
+            $text = "Вы не добавили ни одной операции :(";
+        } else {
+            $joined = $this->joinOperations($operations);
+            $text = "У вас есть следующие операции:\n - $joined";
+        }
+        return $this->generateResponse($userId, $text);
     }
 
-    public function unknown(): string
+    public function operationsByCategory(string $userId, string $category): MessageResponse
     {
-        return "Кажется, я не знаю такой команды... Напиши \"помощь\" и я расскажу, что я умею!";
+        $operations = $this->operationRepository->getOperationsByCategory($userId, $category);
+        if (empty($operations)) {
+            $text = "Вы не добавили ни одной операции для категории $category :(";
+        } else {
+            $joined = $this->joinOperations($operations);
+            $text = "У вас есть следующие операции в категории $category:\n - $joined";
+        }
+        return $this->generateResponse($userId, $text);
+    }
+
+    private function joinOperations(array $operations): string
+    {
+        $mapped = array_map(
+            fn(Operation $op): string => $op->getSum() . " " . $op->getCategory(),
+            $operations
+        );
+        return implode("\n - ", $mapped);
+    }
+
+    public function serverError(string $userId): MessageResponse
+    {
+        return $this->generateResponse($userId, "Ой... Кажется, произошла какая-то ошибка... Уже разбираюсь!");
+    }
+
+    public function unknown(string $userId): MessageResponse
+    {
+        return $this->generateResponse(
+            $userId,
+            "Кажется, я не знаю такой команды... Напиши \"Помощь\" и я расскажу, что я умею!"
+        );
+    }
+
+    private function validateDate(string $date): ?string
+    {
+        $format = "d-m-Y";
+        $d = DateTime::createFromFormat($format, $date);
+        if ($d && $d->format($format) === $date) {
+            return $d->format("Y-m-d");
+        }
+        return null;
+    }
+
+    private function generateResponse(string $userId, string $text, Template $statement = null): MessageResponse
+    {
+        return new MessageResponse(
+            rand(),
+            $userId,
+            $text,
+            1000,
+            $statement,
+            new Keyboard(
+                false,
+                [
+                    [Button::textButton("Отчёт", "primary")],
+                    [
+                        Button::textButton("Категории", "secondary"),
+                        Button::textButton("Операции", "secondary")
+                    ],
+                    [Button::textButton("Помощь", "secondary")]
+                ]
+            )
+        );
     }
 }

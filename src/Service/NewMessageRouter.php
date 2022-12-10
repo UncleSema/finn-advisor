@@ -3,7 +3,6 @@
 namespace FinnAdvisor\Service;
 
 use Exception;
-use FinnAdvisor\Exceptions\AbstractFinnException;
 use FinnAdvisor\Model\NewMessage;
 use FinnAdvisor\VK\VKBotApiClient;
 use Logger;
@@ -28,11 +27,12 @@ class NewMessageRouter
         $userId = $message->getPeerId();
         try {
             $this->routeMessage($message);
-        } catch (AbstractFinnException $e) {
-            $this->apiClient->sendMessage($e->getMessage(), $userId);
-        } catch (Throwable $e) {
+        } catch (Exception $e) {
             $this->logger->error("Unexpected exception during processing the message `$text` from $userId", $e);
-            $this->apiClient->sendMessage($this->responseService->serverError(), $userId);
+            $this->apiClient->sendMessage($this->responseService->serverError($userId));
+        } catch (Throwable $e) {
+            $this->logger->error("Unexpected throwable during processing the message `$text` from $userId:\n" . $e);
+            $this->apiClient->sendMessage($this->responseService->serverError($userId));
         }
     }
 
@@ -51,18 +51,29 @@ class NewMessageRouter
             $response = $this->responseService
                 ->removeCategory($peerId, $matches[1]);
         } elseif ($this->parseHelp($text, $matches)) {
-            $response = $this->responseService->help();
+            $response = $this->responseService->help($peerId);
         } elseif ($this->parseAddOperation($text, $matches)) {
             $response = $this->responseService
                 ->addOperation($peerId, $matches[1], $matches[2], $matches[4]);
         } elseif ($this->parseRemoveOperation($text, $matches)) {
-            $response = $this->responseService->removeOperation($peerId);
+            $response = $this->responseService
+                ->removeOperation($peerId);
+        } elseif ($this->parseRemoveOperationByCategory($text, $matches)) {
+            $response = $this->responseService
+                ->removeOperationByCategory($peerId, $matches[1]);
+        } elseif ($this->parseStatement($text, $matches)) {
+            $response = $this->responseService
+                ->statement($peerId);
+        } elseif ($this->parseAllOperations($text, $matches)) {
+            $response = $this->responseService
+                ->allOperations($peerId);
+        } elseif ($this->parseOperationsByCategory($text, $matches)) {
+            $response = $this->responseService
+                ->operationsByCategory($peerId, $matches[1]);
         } else {
-            $response = $this->responseService->unknown();
+            $response = $this->responseService->unknown($peerId);
         }
-        if ($response != null) {
-            $this->apiClient->sendMessage($response, $peerId);
-        }
+        $this->apiClient->sendMessage($response);
     }
 
     private function parseAllCategories(string $text, array &$matches): bool
@@ -93,6 +104,26 @@ class NewMessageRouter
     private function parseRemoveOperation(string $text, array &$matches): bool
     {
         return $this->regex("убери", $text, $matches);
+    }
+
+    private function parseRemoveOperationByCategory(string $text, array &$matches): bool
+    {
+        return $this->regex("убери\s+(\S+)", $text, $matches);
+    }
+
+    private function parseStatement(string $text, array &$matches): bool
+    {
+        return $this->regex("отч[е|ё]т", $text, $matches);
+    }
+
+    private function parseAllOperations(string $text, array &$matches): bool
+    {
+        return $this->regex("операции", $text, $matches);
+    }
+
+    private function parseOperationsByCategory(string $text, array &$matches): bool
+    {
+        return $this->regex("операции\s+(\S+)", $text, $matches);
     }
 
     private function regex(string $regex, string $text, array &$matches): bool
