@@ -11,11 +11,7 @@ jobs:
         with:
           php-version: '8.2'
           extensions: gd
-      - name: composer install
-        uses: docker://composer:2.4.4
-        with:
-          args: install
-      - name: PHPUnit testing
-        uses: docker://composer:2.4.4
-        with:
-          args: test
+      - name: Composer Install and Test
+        run: |
+          composer install
+          composer test

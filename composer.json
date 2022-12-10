@@ -22,7 +22,7 @@
     "vkcom/vk-php-sdk": "5.101.0",
     "predis/predis": "v2.0.3",
     "apache/log4php": "2.3.0",
-    "amenadiel/jpgraph": "4.1.1",
+    "amenadiel/jpgraph": "v4.1.1",
     "ext-mbstring": "*",
     "ext-pdo": "*",
     "ext-gd": "*"
