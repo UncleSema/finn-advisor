@@ -5,8 +5,10 @@ namespace FinnAdvisor\VK;
 use Exception;
 use FinnAdvisor\Caching\RedisClient;
 use FinnAdvisor\Config;
+use FinnAdvisor\Model\MessageResponse;
 use FinnAdvisor\Model\User;
 use Logger;
+use Throwable;
 use VK\Client\VKApiClient;
 
 class VKBotApiClient
@@ -25,18 +27,30 @@ class VKBotApiClient
         $this->logger = Logger::getLogger(__CLASS__);
     }
 
-    public function sendMessage(string $msg, string $peerId): void
+    public function sendMessage(MessageResponse $response): void
     {
         try {
-            $this->client->messages()->send($this->config->getToken(), [
-                'random_id' => rand(),
-                'peer_id' => $peerId,
-                'message' => $msg,
-                'payload' => 1000,
-            ]);
-        } catch (Exception $e) {
-            $this->logger->error("Error during sending message", $e);
+            $this->client->messages()->send($this->config->getToken(), $response->getParams());
+        } catch (Throwable $e) {
+            $this->logger->error("Error during sending message\n$e");
         }
+    }
+
+    public function uploadPhotos(string $path): string
+    {
+        try {
+            $address = $this->client->photos()->getMessagesUploadServer($this->config->getToken());
+            $photo = $this->client->getRequest()->upload($address['upload_url'], 'photo', $path);
+            $response_save_photo = $this->client->photos()->saveMessagesPhoto($this->config->getToken(), [
+                'server' => $photo['server'],
+                'photo' => $photo['photo'],
+                'hash' => $photo['hash'],
+            ])[0];
+            return $response_save_photo["owner_id"] . "_" . $response_save_photo["id"];
+        } catch (Exception $e) {
+            $this->logger->error("Unexpected exception during uploading photo", $e);
+        }
+        return "";
     }
 
     public function getUser(string $peerId): User

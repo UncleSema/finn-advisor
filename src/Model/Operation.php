@@ -8,15 +8,15 @@ final class Operation
     private string $userId;
     private int $sum;
     private string $category;
-    private ?string $description;
+    private string $date;
 
-    public function __construct(int $id, string $userId, int $sum, string $category, ?string $description)
+    public function __construct(int $id, string $userId, int $sum, string $category, string $date)
     {
         $this->id = $id;
         $this->sum = $sum;
         $this->userId = $userId;
         $this->category = $category;
-        $this->description = $description;
+        $this->date = $date;
     }
 
     public function getId(): string
@@ -24,12 +24,17 @@ final class Operation
         return $this->id;
     }
 
+    public function getDate(): string
+    {
+        return $this->date;
+    }
+
     public function getUserId(): string
     {
         return $this->userId;
     }
 
-    public function getSum(): float
+    public function getSum(): int
     {
         return $this->sum;
     }
@@ -37,10 +42,5 @@ final class Operation
     public function getCategory(): string
     {
         return $this->category;
-    }
-
-    public function getDescription(): ?string
-    {
-        return $this->description;
     }
 }

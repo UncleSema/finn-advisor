@@ -2,7 +2,7 @@
 
 namespace FinnAdvisor\Model;
 
-class NewMessage
+final class NewMessage
 {
     private int $id;
     private int $date;

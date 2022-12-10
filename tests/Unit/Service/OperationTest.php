@@ -4,6 +4,7 @@ namespace FinnAdvisor\Tests\Unit\Service;
 
 use FinnAdvisor\Service\Categories\CategoriesRepository;
 use FinnAdvisor\Service\Operation\OperationRepository;
+use FinnAdvisor\Service\StatementService;
 use FinnAdvisor\Service\UserResponseService;
 use PHPUnit\Framework\TestCase;
 
@@ -15,7 +16,7 @@ class OperationTest extends TestCase
         $service = $this->stubWithMethod("insertOperation", 0);
         self::assertEquals(
             "Не удалось добавить новую операцию... У вас точно есть категория cat?",
-            $service->addOperation("1", 2, "cat", "")
+            $service->addOperation("1", 2, "cat", null)->getMessage()
         );
     }
 
@@ -25,7 +26,7 @@ class OperationTest extends TestCase
         $service = $this->stubWithMethod("deleteLastOperation", null);
         self::assertEquals(
             "Не удалось удалить последнюю операцию... Вы точно добавили хотя бы одну операцию?",
-            $service->removeOperation("1")
+            $service->removeOperation("1")->getMessage()
         );
     }
 
@@ -33,9 +34,10 @@ class OperationTest extends TestCase
     {
         $categoriesStub = $this->createStub(CategoriesRepository::class);
         $operationsStub = $this->createStub(OperationRepository::class);
+        $statementService = $this->createStub(StatementService::class);
         $operationsStub->method($method)
             ->willReturn($value);
 
-        return new UserResponseService($categoriesStub, $operationsStub);
+        return new UserResponseService($categoriesStub, $operationsStub, $statementService);
     }
 }
