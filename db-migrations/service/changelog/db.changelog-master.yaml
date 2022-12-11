@@ -5,3 +5,9 @@ databaseChangeLog:
       changes:
         - sqlFile:
             path: migrations/001-core-tables.sql
+  - changeSet:
+      id: 2
+      author: UncleSema
+      changes:
+        - sqlFile:
+            path: migrations/002-metrics.sql

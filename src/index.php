@@ -3,6 +3,8 @@
 use FinnAdvisor\Caching\RedisClient;
 use FinnAdvisor\Config;
 use FinnAdvisor\Service\Categories\CategoriesRepository;
+use FinnAdvisor\Service\Metrics\MetricsRepository;
+use FinnAdvisor\Service\Metrics\MetricsService;
 use FinnAdvisor\Service\Operation\OperationRepository;
 use FinnAdvisor\Service\NewMessageRouter;
 use FinnAdvisor\Service\StatementService;
@@ -35,6 +37,7 @@ try {
 
 $categoriesRepository = new CategoriesRepository($pdo);
 $operationRepository = new OperationRepository($pdo);
+$metricsRepository = new MetricsRepository($pdo);
 
 $redisHost = $config->getRedisHost();
 $redis = new Client("$redisHost");
@@ -44,7 +47,9 @@ $client = new VKBotApiClient($vk, $redisClient, $config);
 
 $statementService = new StatementService($client);
 $responseService = new UserResponseService($categoriesRepository, $operationRepository, $statementService);
-$messageRouter = new NewMessageRouter($responseService, $client);
+$metricsService = new MetricsService($metricsRepository);
+
+$messageRouter = new NewMessageRouter($responseService, $client, $metricsService);
 $handler = new VKBotCallbackApiHandler($messageRouter, $redisClient);
 $executor = new VKCallbackApiLongPollExecutor($vk, $config->getToken(), $config->getGroupId(), $handler, 25);
 
