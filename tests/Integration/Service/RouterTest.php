@@ -4,6 +4,7 @@ namespace FinnAdvisor\Tests\Integration\Service;
 
 use FinnAdvisor\Model\NewMessage;
 use FinnAdvisor\Service\Categories\CategoriesRepository;
+use FinnAdvisor\Service\Metrics\MetricsService;
 use FinnAdvisor\Service\NewMessageRouter;
 use FinnAdvisor\Service\Operation\OperationRepository;
 use FinnAdvisor\Service\StatementService;
@@ -20,6 +21,7 @@ class RouterTest extends TestCase
         $operationRepository = $this->createStub(OperationRepository::class);
         $categoryRepository = $this->createStub(CategoriesRepository::class);
         $statementService = $this->createStub(StatementService::class);
+        $metricsService = $this->createStub(MetricsService::class);
         $categoryRepository->method("getAllCategoriesForUser")
             ->willThrowException(new PDOException("test exception"));
 
@@ -28,7 +30,7 @@ class RouterTest extends TestCase
             ->method("sendMessage");
 
         $responseService = new UserResponseService($categoryRepository, $operationRepository, $statementService);
-        $router = new NewMessageRouter($responseService, $apiClient);
+        $router = new NewMessageRouter($responseService, $apiClient, $metricsService);
 
         $router->processMessage(new NewMessage(1, 2, 3, "категории"));
     }

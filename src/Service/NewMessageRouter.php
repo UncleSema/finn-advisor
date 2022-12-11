@@ -4,6 +4,7 @@ namespace FinnAdvisor\Service;
 
 use Exception;
 use FinnAdvisor\Model\NewMessage;
+use FinnAdvisor\Service\Metrics\MetricsService;
 use FinnAdvisor\VK\VKBotApiClient;
 use Logger;
 use Throwable;
@@ -12,12 +13,17 @@ class NewMessageRouter
 {
     private UserResponseService $responseService;
     private VKBotApiClient $apiClient;
+    private MetricsService $metricsService;
     private Logger $logger;
 
-    public function __construct(UserResponseService $responseService, VKBotApiClient $apiClient)
-    {
+    public function __construct(
+        UserResponseService $responseService,
+        VKBotApiClient $apiClient,
+        MetricsService $metricsService
+    ) {
         $this->responseService = $responseService;
         $this->apiClient = $apiClient;
+        $this->metricsService = $metricsService;
         $this->logger = Logger::getLogger(__CLASS__);
     }
 
@@ -42,35 +48,46 @@ class NewMessageRouter
         $peerId = $message->getPeerId();
         $matches = [];
         if ($this->parseAllCategories($text, $matches)) {
+            $this->metricsService->newMessage("all_categories");
             $response = $this->responseService
                 ->allCategories($peerId);
         } elseif ($this->parseAddCategory($text, $matches)) {
+            $this->metricsService->newMessage("add_category");
             $response = $this->responseService
                 ->addCategory($peerId, $matches[1]);
         } elseif ($this->parseRemoveCategory($text, $matches)) {
+            $this->metricsService->newMessage("remove_category");
             $response = $this->responseService
                 ->removeCategory($peerId, $matches[1]);
         } elseif ($this->parseHelp($text, $matches)) {
+            $this->metricsService->newMessage("help");
             $response = $this->responseService->help($peerId);
         } elseif ($this->parseAddOperation($text, $matches)) {
+            $this->metricsService->newMessage("add_operation");
             $response = $this->responseService
                 ->addOperation($peerId, $matches[1], $matches[2], $matches[4]);
         } elseif ($this->parseRemoveOperation($text, $matches)) {
+            $this->metricsService->newMessage("remove_operation");
             $response = $this->responseService
                 ->removeOperation($peerId);
         } elseif ($this->parseRemoveOperationByCategory($text, $matches)) {
+            $this->metricsService->newMessage("remove_operation_by_category");
             $response = $this->responseService
                 ->removeOperationByCategory($peerId, $matches[1]);
         } elseif ($this->parseStatement($text, $matches)) {
+            $this->metricsService->newMessage("statement");
             $response = $this->responseService
                 ->statement($peerId);
         } elseif ($this->parseAllOperations($text, $matches)) {
+            $this->metricsService->newMessage("all_operations");
             $response = $this->responseService
                 ->allOperations($peerId);
         } elseif ($this->parseOperationsByCategory($text, $matches)) {
+            $this->metricsService->newMessage("all_operations_by_category");
             $response = $this->responseService
                 ->operationsByCategory($peerId, $matches[1]);
         } else {
+            $this->metricsService->newMessage("unknown");
             $response = $this->responseService->unknown($peerId);
         }
         $this->apiClient->sendMessage($response);
@@ -93,7 +110,8 @@ class NewMessageRouter
 
     private function parseHelp(string $text, array &$matches): bool
     {
-        return $this->regex("помощь", $text, $matches);
+        return $this->regex("помощь", $text, $matches) ||
+            $this->regex("начать", $text, $matches);
     }
 
     private function parseAddOperation(string $text, array &$matches): bool

@@ -3,6 +3,7 @@
 namespace FinnAdvisor\Tests\Unit\Service;
 
 use FinnAdvisor\Model\NewMessage;
+use FinnAdvisor\Service\Metrics\MetricsService;
 use FinnAdvisor\Service\NewMessageRouter;
 use FinnAdvisor\Service\UserResponseService;
 use FinnAdvisor\VK\VKBotApiClient;
@@ -17,12 +18,13 @@ class RouterTest extends TestCase
     public function routerShouldChooseRightRoutesDependingOnMessageContent(string $testingText, string $method): void
     {
         $responseServerMock = $this->createMock(UserResponseService::class);
+        $metricsService = $this->createStub(MetricsService::class);
         $responseServerMock->expects($this->once())
             ->method($method);
 
         $apiClientStub = $this->createStub(VKBotApiClient::class);
 
-        $router = new NewMessageRouter($responseServerMock, $apiClientStub);
+        $router = new NewMessageRouter($responseServerMock, $apiClientStub, $metricsService);
         $router->processMessage($this->testMessage($testingText));
     }
 
@@ -33,12 +35,13 @@ class RouterTest extends TestCase
     public function routerShouldIgnoreWhitespaces(string $testingText, string $method)
     {
         $responseServerMock = $this->createMock(UserResponseService::class);
+        $metricsService = $this->createStub(MetricsService::class);
         $responseServerMock->expects($this->once())
             ->method($method);
 
         $apiClientStub = $this->createStub(VKBotApiClient::class);
 
-        $router = new NewMessageRouter($responseServerMock, $apiClientStub);
+        $router = new NewMessageRouter($responseServerMock, $apiClientStub, $metricsService);
         $router->processMessage($this->testMessage($testingText));
     }
 
@@ -49,12 +52,13 @@ class RouterTest extends TestCase
     public function routerShouldIgnoreCase(string $testingText, string $method)
     {
         $responseServerMock = $this->createMock(UserResponseService::class);
+        $metricsService = $this->createStub(MetricsService::class);
         $responseServerMock->expects($this->once())
             ->method($method);
 
         $apiClientStub = $this->createStub(VKBotApiClient::class);
 
-        $router = new NewMessageRouter($responseServerMock, $apiClientStub);
+        $router = new NewMessageRouter($responseServerMock, $apiClientStub, $metricsService);
         $router->processMessage($this->testMessage($testingText));
     }
 
@@ -66,13 +70,14 @@ class RouterTest extends TestCase
     {
 
         $responseServerMock = $this->createMock(UserResponseService::class);
+        $metricsService = $this->createStub(MetricsService::class);
         $responseServerMock->expects($this->once())
             ->method($method)
             ->with(...$args);
 
         $apiClientStub = $this->createStub(VKBotApiClient::class);
 
-        $router = new NewMessageRouter($responseServerMock, $apiClientStub);
+        $router = new NewMessageRouter($responseServerMock, $apiClientStub, $metricsService);
         $router->processMessage($this->testMessage($testingText));
     }
 
