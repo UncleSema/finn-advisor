@@ -160,7 +160,9 @@ class StatementService
         $p1 = new PiePlot($data);
         $p1->ShowBorder();
         $p1->SetColor('black');
-        $p1->SetSliceColors(array('#1E90FF', '#2E8B57', '#ADFF2F', '#DC143C', '#BA55D3'));
+        $p1->SetSliceColors([
+            '#3D5A80', '#98C1D9', '#E0FBFC', '#EE6C4D', '#293241', '#2B2B42', '#8D99AE', '#EDF2F4', '#EF233C', '#d90429'
+        ]);
         $p1->SetLegends($legends);
 
         $graph->Add($p1);
