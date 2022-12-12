@@ -182,6 +182,9 @@ class StatementService
         $graph->xaxis->SetFont(FF_ARIAL, FS_NORMAL, 8);
         $graph->xaxis->SetLabelAngle(30);
 
+        usort($operations, function (Operation $op1, Operation $op2) {
+            return strtotime($op1->getDate()) - strtotime($op2->getDate());
+        });
         $dataX = array_map(fn(Operation $op) => strtotime($op->getDate()), $operations);
         $dataY = [];
         foreach ($operations as $i => $op) {
